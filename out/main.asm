@@ -10,6 +10,7 @@
 ;--------------------------------------------------------
 	.globl _main
 	.globl _clear_screen
+	.globl _puts
 	.globl _printf
 	.globl _hello
 	.globl _b
@@ -75,56 +76,44 @@ _putchar::
 	ld	hl, #0x0000
 ;main.c:19: }
 	ret
-;main.c:21: int main(void) {
+;main.c:23: int main(void) {
 ;	---------------------------------
 ; Function main
 ; ---------------------------------
 _main::
-;main.c:23: clear_screen();
+;main.c:25: clear_screen();
 	call	_clear_screen
-;main.c:27: printf("%d + %d = %d, %s\n", 2, 5, (2+5), hello);
-	ld	hl, #_hello
-	push	hl
-	ld	hl, #0x0007
-	push	hl
-	ld	l, #0x05
-	push	hl
-	ld	l, #0x02
-	push	hl
-	ld	hl, #___str_0
-	push	hl
-	call	_printf
-	ld	hl, #10
-	add	hl, sp
-	ld	sp, hl
-;main.c:28: printf("%d + %d = %d, %s", 2, 5, (2+5), hello);
-	ld	hl, #_hello
-	push	hl
-	ld	hl, #0x0007
-	push	hl
-	ld	l, #0x05
-	push	hl
-	ld	l, #0x02
-	push	hl
+;main.c:27: printf("\n");
 	ld	hl, #___str_1
 	push	hl
+	call	_puts
+;main.c:28: printf("math:%d + %d = %d\n", 2, 5, (2+5), hello);
+	ld	hl, #_hello
+	ex	(sp),hl
+	ld	hl, #0x0007
+	push	hl
+	ld	l, #0x05
+	push	hl
+	ld	l, #0x02
+	push	hl
+	ld	hl, #___str_2
+	push	hl
 	call	_printf
 	ld	hl, #10
 	add	hl, sp
 	ld	sp, hl
-;main.c:34: while(1) {
+;main.c:30: while(1) {
 00102$:
-;main.c:35: a++;
+;main.c:31: a++;
 	ld	hl, #_a+0
 	inc	(hl)
-;main.c:37: }
+;main.c:33: }
 	jr	00102$
-___str_0:
-	.ascii "%d + %d = %d, %s"
-	.db 0x0a
-	.db 0x00
 ___str_1:
-	.ascii "%d + %d = %d, %s"
+	.db 0x00
+___str_2:
+	.ascii "math:%d + %d = %d"
+	.db 0x0a
 	.db 0x00
 	.area _CODE
 	.area _INITIALIZER

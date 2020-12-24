@@ -24,15 +24,9 @@ int main(void) {
 
 	clear_screen();
 
-	// write_text("Ahoy!");
-	// printf("%d + %d = %d, %s\n", 2, 5, (2+5), hello);
-	printf("%d + %d = %d, %s\n", 2, 5, (2+5), hello);
-	printf("%d + %d = %d, %s", 2, 5, (2+5), hello);
-	// putchar('A');
-	// putchar('B');
-	// putchar('c');
-	// putchar('d');
-
+	printf("\n");
+	printf("math:%d + %d = %d\n", 2, 5, (2+5), hello);
+	
 	while(1) {
 		a++;
 	}
