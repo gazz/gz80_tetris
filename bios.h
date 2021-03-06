@@ -1,5 +1,8 @@
 // sdcc / asm interop reference: https://gist.github.com/Konamiman/af5645b9998c802753023cf1be8a2970
 
+#define true 1
+#define false 0
+
 inline void clear_screen() {
 	__asm
 	call 0xf5
@@ -34,6 +37,8 @@ inline int test_args(char sprite, char x, char y) {
 	return 0;
 }
 
+
+
 inline int putchar(int ch) {
 	(void)ch;
 	__asm
@@ -44,6 +49,8 @@ inline int putchar(int ch) {
 	__endasm;
 	return 0;
 }
+
+
 
 /*
 T_MILIS            	equ $204C
@@ -95,3 +102,74 @@ inline void sleep(int millis) {
 		__endasm;
 	}
 }
+
+/*
+DigitU16_ToASCII	equ $06BD
+DigitU8_ToASCII		equ $0694
+DigitU8_ToASCII_3digit	equ $0686
+*/
+
+void DigitU8_ToASCII(char *str_buf, char number) {
+	(void)str_buf;(void)number;
+	__asm
+	ld iy, #2
+	add	iy, sp
+
+	ld l, (iy)
+	ld h, 1(iy)
+	ld a, 2(iy)
+	call #0x694
+	__endasm;
+}
+
+void digit_to_char_pad(char *str_buf, unsigned int digit, char pad) {
+	char temp_out[7];
+	char *temp_out_ptr = temp_out;
+	int tenthou = digit / 10000;
+	int thou_hundreds = (digit % 10000) / 100;
+	int tens_singles = digit % 100;
+	if (tenthou > 0) {
+		DigitU8_ToASCII(temp_out_ptr, tenthou);
+		temp_out_ptr += 2;
+	}
+	if (thou_hundreds > 0) {
+		DigitU8_ToASCII(temp_out_ptr, thou_hundreds);
+		temp_out_ptr += 2;
+	}
+	DigitU8_ToASCII(temp_out_ptr, tens_singles);
+	temp_out_ptr = temp_out;
+	int bytes_left = 7;
+	if (!pad) {
+		while (*temp_out_ptr == '0' && *(temp_out_ptr + 1) != '\0') {
+			bytes_left--;
+			temp_out_ptr++;
+		}		
+	}
+	memcpy(str_buf, temp_out_ptr, bytes_left);
+}
+
+void digit_to_char(char *str_buf, unsigned int digit) {
+	digit_to_char_pad(str_buf, digit, 0);
+}
+
+
+char get_ps2_scancode() __naked {
+	__asm
+	scancode = 0x2042
+	SERB = 0x9
+	SERBC = 0xb
+
+	in a, (SERBC)
+	bit 0, a
+	jr z, no_new_char
+
+	in a, (SERB)
+	ld l, a
+	jr done_ps2_scan
+no_new_char:
+	ld l, #0
+done_ps2_scan:
+	ret
+	__endasm;
+}
+
