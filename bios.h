@@ -2,6 +2,7 @@
 
 #define true 1
 #define false 0
+#define bool short
 
 inline void clear_screen() {
 	__asm
