@@ -73,9 +73,6 @@ set_cell_sprite:
 
 	ld a, 2(iy)
 
-	push bc
-	push de
-	push hl
 	push af
 
 	; instruction
@@ -151,9 +148,6 @@ set_cell_sprite:
 	;call instr_wait
 
 	pop af
-	pop hl
-	pop de
-	pop bc
 	__endasm;
 }
 
@@ -177,3 +171,96 @@ void out_vga_text(int x, int y, char *text) {
 		next_char = *++text;
 	}
 }
+
+
+void push_instruction_3(char instruction, char arg0, char arg1, char arg2) {
+	(void)instruction;(void)arg0;(void)arg1;(void)arg2;
+	__asm
+	ld	iy, #2	; bypass return address
+	add	iy, sp
+
+	ld b, (iy)
+	ld c, 1(iy)
+	ld h, 2(iy)
+	ld l, 3(iy)
+
+	; instruction
+	; 1) data enable goes low
+	; 2) set data output bits to instruction 0x7
+	; 3) control enable pin goes low
+	; 4) write pin goes low
+	; 5) chip enable pin goes low
+	ld d, b
+	ld e, #~(VGA_CONTROL_ENABLE | VGA_DATA_ENABLE | VGA_WRITE_ENABLE | VGA_CHIP_ENABLE)
+	call PIO2Out
+	;call instr_wait
+
+	; 6) chip enable pin goes high
+	ld e, #~(VGA_CONTROL_ENABLE | VGA_DATA_ENABLE | VGA_WRITE_ENABLE)
+	call PIO2Out
+	;call instr_wait
+
+	; arg 1
+	; 7) set data output bits to arg1
+	; 8) chip enable pin goes low
+	ld d, c
+	ld e, #~(VGA_CONTROL_ENABLE | VGA_DATA_ENABLE | VGA_WRITE_ENABLE | VGA_CHIP_ENABLE)
+	call PIO2Out
+	;call instr_wait
+
+	; 9) chip enable pin goes high
+	ld e, #~(VGA_CONTROL_ENABLE | VGA_DATA_ENABLE | VGA_WRITE_ENABLE)
+	call PIO2Out
+	;call instr_wait
+
+	; arg 2
+	; 10) set data output bits to arg2
+	; 11) chip enable pin goes low
+	ld d, h
+	ld e, #~(VGA_CONTROL_ENABLE | VGA_DATA_ENABLE | VGA_WRITE_ENABLE | VGA_CHIP_ENABLE)
+	call PIO2Out
+	;call instr_wait
+
+	; 12) chip enable pin goes high
+	ld e, #~(VGA_CONTROL_ENABLE | VGA_DATA_ENABLE | VGA_WRITE_ENABLE)
+	call PIO2Out
+	;call instr_wait
+
+	; arg 3
+	; 13) set data output bits to arg3
+	; 14) chip enable pin goes low
+	ld d, l
+	ld e, #~(VGA_CONTROL_ENABLE | VGA_DATA_ENABLE | VGA_WRITE_ENABLE | VGA_CHIP_ENABLE)
+	call PIO2Out
+	;call instr_wait
+
+	; wrap up
+	; 15) chip enable pin goes high
+	; 16) write pin goes high
+	; 17) control enable pin goes high
+	; 18) data enable goes low
+	ld e, #~0
+	call PIO2Out
+	;call instr_wait
+
+	__endasm;
+}
+
+void update_sprite(unsigned char sprite_index, const unsigned char input[120]) {
+  for (int i = 0; i < 120; i+=2) {
+    unsigned char sprite_pixel = input[i];
+    unsigned char sprite_pixel2 = input[i+1];
+    unsigned char combined_pixels = ((sprite_pixel << 4) & 0xff) + (sprite_pixel2 & 0xf);
+    unsigned char offset = i;
+    unsigned char offsetX = offset % 10;
+    unsigned char offsetY = offset / 10;
+
+    unsigned char arg0 = combined_pixels; 
+    unsigned char arg1 = ((offsetY << 4)& 0xff) + (offsetX & 0xf);
+    unsigned char arg2 = (sprite_index & 0xff);
+    
+    push_instruction_3(0x8, arg0, arg1, arg2);
+  }
+}
+
+
