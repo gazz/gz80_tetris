@@ -23,6 +23,8 @@ init:
 
 	.area   _CODE
 _exit:
+	ld hl, #0x03A4
+	jp (hl)
 1$:
 	halt
 	jr	1$
